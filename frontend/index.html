@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Call Intelligence — Sales Manager Console</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .badge { padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500; display: inline-block; }
+  .score-pill { width: 32px; text-align: center; display: inline-block; border-radius: 6px; padding: 2px 0; font-weight: 600; }
+  .score-5 { background: #dcfce7; color: #166534; }
+  .score-4 { background: #d9f99d; color: #365314; }
+  .score-3 { background: #fef3c7; color: #854d0e; }
+  .score-2 { background: #fed7aa; color: #9a3412; }
+  .score-1 { background: #fecaca; color: #991b1b; }
+  .score-0 { background: #fecaca; color: #991b1b; }
+  .ts { color: #64748b; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+  .agent { color: #1d4ed8; font-weight: 600; }
+  .lead  { color: #047857; font-weight: 600; }
+  .tooltip { position: relative; cursor: help; border-bottom: 1px dotted #94a3b8; }
+  .tooltip:hover .tt-body { display: block; }
+  .tt-body { display: none; position: absolute; z-index: 50; top: 100%; left: 0; background: #1e293b; color: #fff; padding: 10px 12px; border-radius: 6px; width: 320px; font-size: 12px; line-height: 1.5; box-shadow: 0 10px 25px rgba(0,0,0,.2); }
+  .tt-body b { color: #fde68a; }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+<header class="bg-white border-b sticky top-0 z-10">
+  <div class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+    <div>
+      <div class="text-lg font-semibold">Call Intelligence</div>
+      <div class="text-xs text-slate-500">Sales manager console · Zetta Technologies</div>
+    </div>
+    <nav class="flex gap-2 text-sm">
+      <button data-tab="list" class="tab px-3 py-1.5 rounded bg-slate-900 text-white">Calls</button>
+      <button data-tab="leaderboard" class="tab px-3 py-1.5 rounded hover:bg-slate-100">Leaderboard</button>
+      <button data-tab="upload" class="tab px-3 py-1.5 rounded hover:bg-slate-100">Upload</button>
+      <button data-tab="admin" class="tab px-3 py-1.5 rounded hover:bg-slate-100">Admin</button>
+    </nav>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-6 py-6">
+
+<!-- LIST VIEW -->
+<section id="pane-list">
+  <div class="flex flex-wrap gap-3 items-end mb-4">
+    <div>
+      <label class="text-xs text-slate-500">Search</label>
+      <input id="q" placeholder="lead name or telecaller" class="block border rounded px-3 py-1.5 w-64 text-sm" />
+    </div>
+    <div>
+      <label class="text-xs text-slate-500">Telecaller</label>
+      <select id="f-tc" class="block border rounded px-2 py-1.5 text-sm w-48"><option value="">All</option></select>
+    </div>
+    <div>
+      <label class="text-xs text-slate-500">Site visit</label>
+      <select id="f-sv" class="block border rounded px-2 py-1.5 text-sm">
+        <option value="">All</option>
+        <option>committed_with_date</option>
+        <option>committed_no_date</option>
+        <option>declined</option>
+        <option>not_asked</option>
+        <option>call_cut</option>
+      </select>
+    </div>
+    <div>
+      <label class="text-xs text-slate-500">Next action</label>
+      <select id="f-act" class="block border rounded px-2 py-1.5 text-sm">
+        <option value="">All</option>
+        <option>confirm_site_visit</option>
+        <option>schedule_callback_3_days</option>
+        <option>send_brochure_whatsapp</option>
+        <option>escalate_to_manager</option>
+        <option>mark_cold</option>
+        <option>no_action</option>
+      </select>
+    </div>
+    <div>
+      <label class="text-xs text-slate-500">Min overall</label>
+      <input id="f-min" type="number" min="0" max="5" step="0.1" value="0" class="block border rounded px-2 py-1.5 text-sm w-20" />
+    </div>
+    <div class="ml-auto text-sm text-slate-500" id="count">—</div>
+  </div>
+
+  <div class="bg-white rounded-lg border overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-100 text-slate-600 text-xs uppercase">
+        <tr>
+          <th class="text-left px-3 py-2 cursor-pointer" data-sort="timestamp">Date</th>
+          <th class="text-left px-3 py-2 cursor-pointer" data-sort="telecaller_name">Telecaller</th>
+          <th class="text-left px-3 py-2 cursor-pointer" data-sort="lead_name">Lead</th>
+          <th class="text-left px-3 py-2 cursor-pointer" data-sort="duration_sec">Dur</th>
+          <th class="text-left px-3 py-2 cursor-pointer" data-sort="overall_score">Score</th>
+          <th class="text-left px-3 py-2">Unit</th>
+          <th class="text-left px-3 py-2">Site visit</th>
+          <th class="text-left px-3 py-2">Last stage</th>
+          <th class="text-left px-3 py-2">Next action</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- LEADERBOARD -->
+<section id="pane-leaderboard" class="hidden">
+  <h2 class="text-lg font-semibold mb-1">Telecaller Leaderboard</h2>
+  <p class="text-sm text-slate-500 mb-4">Average overall score across all calls per telecaller.</p>
+  <div class="bg-white rounded-lg border overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-100 text-slate-600 text-xs uppercase">
+        <tr>
+          <th class="text-left px-3 py-2">Rank</th>
+          <th class="text-left px-3 py-2">Telecaller</th>
+          <th class="text-left px-3 py-2">Calls</th>
+          <th class="text-left px-3 py-2">Avg score</th>
+          <th class="text-left px-3 py-2">Min</th>
+          <th class="text-left px-3 py-2">Max</th>
+        </tr>
+      </thead>
+      <tbody id="lb-rows"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- UPLOAD -->
+<section id="pane-upload" class="hidden max-w-3xl">
+  <h2 class="text-lg font-semibold mb-1">Upload a new transcript</h2>
+  <p class="text-sm text-slate-500 mb-4">Paste a transcript in the <code class="bg-slate-100 px-1">[MM:SS-MM:SS] Agent/Lead: "..."</code> format. We'll run extraction, scoring, stage detection and summary.</p>
+  <textarea id="tx" rows="14" class="w-full border rounded p-3 text-sm font-mono" placeholder='[00:00-00:05] Agent: "Hello sir, Suresh here from Skyline Properties"
+[00:05-00:12] Lead: "haan sollunga, ena vishayam?"
+[00:12-00:25] Agent: "Sir, naanga Velachery-la oru puthusa 3BHK launch pannirukom..."'></textarea>
+  <div class="mt-3 flex gap-2 items-center">
+    <button id="btn-upload" class="bg-slate-900 text-white text-sm px-4 py-2 rounded">Process transcript</button>
+    <span id="upload-status" class="text-sm text-slate-500"></span>
+  </div>
+  <div id="upload-result" class="mt-6"></div>
+</section>
+
+<!-- ADMIN -->
+<section id="pane-admin" class="hidden max-w-3xl">
+  <h2 class="text-lg font-semibold mb-1">Admin — Telemetry</h2>
+  <p class="text-sm text-slate-500 mb-4">LLM usage since the server started.</p>
+  <div id="admin-body" class="bg-white border rounded p-4 text-sm font-mono">loading…</div>
+  <h3 class="text-md font-semibold mt-6 mb-2">Scoring Rubric</h3>
+  <div id="rubric-body" class="bg-white border rounded p-4 text-sm"></div>
+</section>
+
+<!-- DETAIL MODAL -->
+<div id="detail" class="hidden fixed inset-0 bg-black/40 z-40 overflow-y-auto" onclick="if(event.target.id==='detail')closeDetail()">
+  <div class="bg-white max-w-5xl mx-auto my-8 rounded-lg shadow-xl">
+    <div class="px-6 py-4 border-b flex justify-between items-start">
+      <div>
+        <div id="d-title" class="text-lg font-semibold"></div>
+        <div id="d-sub" class="text-sm text-slate-500"></div>
+      </div>
+      <button onclick="closeDetail()" class="text-2xl leading-none text-slate-400 hover:text-slate-700">&times;</button>
+    </div>
+    <div id="d-body" class="p-6"></div>
+  </div>
+</div>
+
+<script>
+const $ = sel => document.querySelector(sel);
+const fmtDate = iso => new Date(iso).toLocaleString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+const fmtDur = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+const scoreCls = s => `score-pill score-${Math.max(0,Math.min(5,Math.round(s)))}`;
+const badge = (v, cls) => `<span class="badge ${cls||'bg-slate-100 text-slate-700'}">${v}</span>`;
+
+const outcomeColor = {
+  committed_with_date: 'bg-green-100 text-green-800',
+  committed_no_date:   'bg-lime-100 text-lime-800',
+  declined:            'bg-red-100 text-red-800',
+  not_asked:           'bg-slate-100 text-slate-700',
+  call_cut:            'bg-orange-100 text-orange-800',
+};
+const actionColor = {
+  confirm_site_visit:        'bg-green-100 text-green-800',
+  schedule_callback_3_days:  'bg-blue-100 text-blue-800',
+  send_brochure_whatsapp:    'bg-indigo-100 text-indigo-800',
+  escalate_to_manager:       'bg-amber-100 text-amber-800',
+  mark_cold:                 'bg-slate-200 text-slate-700',
+  no_action:                 'bg-slate-100 text-slate-500',
+};
+
+let ALL = [], RUBRIC = {}, sortKey = 'timestamp', sortDir = -1;
+
+async function boot() {
+  const [callsR, rubricR] = await Promise.all([
+    fetch('/api/calls').then(r=>r.json()),
+    fetch('/api/rubric').then(r=>r.json()),
+  ]);
+  ALL = callsR.calls;
+  RUBRIC = rubricR;
+  const tcs = [...new Set(ALL.map(c=>c.telecaller_name))].sort();
+  $('#f-tc').innerHTML = '<option value="">All</option>' + tcs.map(n=>`<option>${n}</option>`).join('');
+  renderList();
+  renderRubric();
+  ['q','f-tc','f-sv','f-act','f-min'].forEach(id => $('#'+id).addEventListener('input', renderList));
+  document.querySelectorAll('[data-sort]').forEach(th => th.onclick = () => {
+    const k = th.dataset.sort;
+    if (k === sortKey) sortDir = -sortDir; else { sortKey = k; sortDir = -1; }
+    renderList();
+  });
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => setTab(t.dataset.tab));
+}
+
+function setTab(tab) {
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.classList.toggle('bg-slate-900', t.dataset.tab===tab);
+    t.classList.toggle('text-white',   t.dataset.tab===tab);
+  });
+  ['list','leaderboard','upload','admin'].forEach(p => {
+    $('#pane-'+p).classList.toggle('hidden', p!==tab);
+  });
+  if (tab==='leaderboard') renderLeaderboard();
+  if (tab==='admin') renderAdmin();
+}
+
+function filtered() {
+  const q = $('#q').value.toLowerCase().trim();
+  const tc = $('#f-tc').value;
+  const sv = $('#f-sv').value;
+  const act = $('#f-act').value;
+  const min = parseFloat($('#f-min').value||0);
+  return ALL.filter(c => {
+    if (q && !(c.lead_name?.toLowerCase().includes(q) || c.telecaller_name?.toLowerCase().includes(q))) return false;
+    if (tc && c.telecaller_name !== tc) return false;
+    if (sv && c.site_visit_outcome !== sv) return false;
+    if (act && c.recommended_next_action !== act) return false;
+    if ((c.overall_score||0) < min) return false;
+    return true;
+  }).sort((a,b) => {
+    const va=a[sortKey], vb=b[sortKey];
+    if (va==null) return 1; if (vb==null) return -1;
+    return (va>vb?1:va<vb?-1:0) * sortDir;
+  });
+}
+
+function renderList() {
+  const rows = filtered();
+  $('#count').textContent = `${rows.length} of ${ALL.length} calls`;
+  $('#rows').innerHTML = rows.map(c => `
+    <tr class="border-t hover:bg-slate-50 cursor-pointer" onclick="openDetail('${c.call_id}')">
+      <td class="px-3 py-2 ts">${fmtDate(c.timestamp)}</td>
+      <td class="px-3 py-2">${c.telecaller_name||''}</td>
+      <td class="px-3 py-2">${c.lead_name||''}</td>
+      <td class="px-3 py-2 ts">${fmtDur(c.duration_sec||0)}</td>
+      <td class="px-3 py-2"><span class="${scoreCls(c.overall_score)}">${(c.overall_score||0).toFixed(1)}</span></td>
+      <td class="px-3 py-2">${badge(c.unit_configuration, 'bg-slate-100 text-slate-700')}</td>
+      <td class="px-3 py-2">${badge(c.site_visit_outcome, outcomeColor[c.site_visit_outcome])}</td>
+      <td class="px-3 py-2">${badge(c.last_stage_reached, 'bg-slate-100 text-slate-700')}</td>
+      <td class="px-3 py-2">${badge(c.recommended_next_action, actionColor[c.recommended_next_action])}</td>
+    </tr>`).join('');
+}
+
+async function renderLeaderboard() {
+  const r = await fetch('/api/leaderboard').then(r=>r.json());
+  $('#lb-rows').innerHTML = r.rows.map((row,i) => `
+    <tr class="border-t">
+      <td class="px-3 py-2">${i===0?'🏆':i===r.rows.length-1?'⚠️':''} ${i+1}</td>
+      <td class="px-3 py-2">${row.telecaller_name} <span class="text-xs text-slate-400">${row.telecaller_id}</span></td>
+      <td class="px-3 py-2">${row.calls}</td>
+      <td class="px-3 py-2"><span class="${scoreCls(row.avg_score)}">${row.avg_score.toFixed(2)}</span></td>
+      <td class="px-3 py-2 ts">${row.min_score.toFixed(1)}</td>
+      <td class="px-3 py-2 ts">${row.max_score.toFixed(1)}</td>
+    </tr>`).join('');
+}
+
+async function renderAdmin() {
+  const t = await fetch('/api/admin/telemetry').then(r=>r.json());
+  $('#admin-body').innerHTML = Object.entries(t).map(([k,v])=>`<div><span class="text-slate-500">${k}</span>: <b>${JSON.stringify(v)}</b></div>`).join('');
+}
+
+function renderRubric() {
+  $('#rubric-body').innerHTML = Object.entries(RUBRIC).map(([dim, meta]) => `
+    <div class="mb-4">
+      <div class="font-semibold capitalize">${dim.replace(/_/g,' ')}</div>
+      <div class="text-slate-500 text-xs mb-2">${meta.description}</div>
+      <ul class="text-xs space-y-1">
+        ${Object.entries(meta.anchors).sort((a,b)=>b[0]-a[0]).map(([s,t]) =>
+          `<li><span class="${scoreCls(s)} !w-6">${s}</span> ${t}</li>`).join('')}
+      </ul>
+      ${meta.note?`<div class="text-xs text-amber-700 mt-1">Note: ${meta.note}</div>`:''}
+    </div>`).join('');
+}
+
+function rubricTip(dim) {
+  const m = RUBRIC[dim];
+  if (!m) return '';
+  const anchors = Object.entries(m.anchors).sort((a,b)=>b[0]-a[0])
+    .map(([s,t])=>`<div><b>${s}</b>: ${t}</div>`).join('');
+  return `<span class="tooltip">${dim.replace(/_/g,' ')}<span class="tt-body">${anchors}</span></span>`;
+}
+
+async function openDetail(id) {
+  const row = await fetch('/api/calls/'+id).then(r=>r.json());
+  $('#d-title').textContent = `${row.lead_name} · ${row.telecaller_name}`;
+  $('#d-sub').textContent = `${fmtDate(row.timestamp)} · ${fmtDur(row.duration_sec)} · ${row.call_id}`;
+
+  const a = row.analysis;
+  const e = a.extraction;
+  const qs = a.quality_scores;
+  const overall = ((qs.discovery.score+qs.pitch.score+qs.objection_handling.score+qs.next_step.score)/4).toFixed(2);
+  const bud = (e.budget_range === 'not_discussed' || !e.budget_range) ? 'Not discussed'
+            : (e.budget_range.min_lakhs === e.budget_range.max_lakhs
+                ? `${e.budget_range.min_lakhs} L`
+                : `${e.budget_range.min_lakhs}–${e.budget_range.max_lakhs} L`);
+
+  $('#d-body').innerHTML = `
+    <div class="grid grid-cols-3 gap-4 mb-5 text-sm">
+      <div class="col-span-3 p-3 bg-slate-50 rounded">
+        <div class="text-xs text-slate-500 mb-1">Summary</div>
+        <div>${a.summary}</div>
+      </div>
+      <div><div class="text-xs text-slate-500">Unit</div><div>${badge(e.unit_configuration, 'bg-slate-100')}</div></div>
+      <div><div class="text-xs text-slate-500">Budget</div><div>${bud}</div></div>
+      <div><div class="text-xs text-slate-500">Timeline</div><div>${badge(e.timeline, 'bg-slate-100')}</div></div>
+      <div><div class="text-xs text-slate-500">Locations</div><div>${(e.preferred_locations||[]).map(l=>badge(l,'bg-blue-50 text-blue-700')).join(' ')||'<span class="text-slate-400">None</span>'}</div></div>
+      <div><div class="text-xs text-slate-500">Site visit</div><div>${badge(e.site_visit_outcome, outcomeColor[e.site_visit_outcome])}</div></div>
+      <div><div class="text-xs text-slate-500">Last stage</div><div>${badge(a.last_stage_reached, 'bg-slate-100')}</div></div>
+      <div class="col-span-3 p-3 border rounded bg-amber-50">
+        <div class="text-xs text-amber-800 mb-1">Recommended next action</div>
+        <div>${badge(a.recommended_next_action, actionColor[a.recommended_next_action])} <span class="text-xs text-slate-600">${a.next_action_reason||''}</span></div>
+      </div>
+    </div>
+
+    <div class="mb-5">
+      <div class="flex items-center gap-3 mb-2">
+        <h3 class="font-semibold">Quality scores</h3>
+        <span class="text-xs text-slate-500">hover a dimension name for the 0–5 rubric</span>
+        <span class="ml-auto text-sm">Overall: <span class="${scoreCls(overall)}">${overall}</span></span>
+      </div>
+      <div class="grid grid-cols-2 gap-3 text-sm">
+        ${['discovery','pitch','objection_handling','next_step'].map(k => `
+          <div class="border rounded p-3">
+            <div class="flex items-center justify-between mb-1">
+              <div class="text-xs font-medium text-slate-600">${rubricTip(k)}</div>
+              <span class="${scoreCls(qs[k].score)}">${qs[k].score}</span>
+            </div>
+            <div class="text-slate-700">${qs[k].reason}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div>
+      <h3 class="font-semibold mb-2">Transcript</h3>
+      <div class="bg-slate-50 border rounded p-3 max-h-96 overflow-y-auto font-mono text-xs leading-6 whitespace-pre-wrap">${fmtTranscript(row.transcript)}</div>
+    </div>
+  `;
+  $('#detail').classList.remove('hidden');
+}
+
+function fmtTranscript(t) {
+  return t.split('\n').map(line => {
+    const m = line.match(/^(\[\d+:\d+-\d+:\d+\])\s*(Agent|Lead):\s*(.*)$/);
+    if (!m) return escapeHtml(line);
+    const cls = m[2]==='Agent' ? 'agent' : 'lead';
+    return `<span class="ts">${m[1]}</span> <span class="${cls}">${m[2]}:</span> ${escapeHtml(m[3])}`;
+  }).join('\n');
+}
+function escapeHtml(s){return (s||'').replace(/[&<>]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;' }[c]));}
+
+function closeDetail() { $('#detail').classList.add('hidden'); }
+
+// Upload
+$('#btn-upload').onclick = async () => {
+  const transcript = $('#tx').value.trim();
+  if (!transcript) return;
+  $('#upload-status').textContent = 'Processing…';
+  $('#btn-upload').disabled = true;
+  try {
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      headers: {'content-type':'application/json'},
+      body: JSON.stringify({ transcript })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    $('#upload-status').textContent = `Done · ${data.call_id}${data.cached?' (cached)':''}`;
+    const qs = data.quality_scores;
+    const overall = ((qs.discovery.score+qs.pitch.score+qs.objection_handling.score+qs.next_step.score)/4).toFixed(2);
+    $('#upload-result').innerHTML = `
+      <div class="border rounded p-4 bg-white">
+        <div class="text-sm text-slate-500 mb-2">${data.call_id} · overall <span class="${scoreCls(overall)}">${overall}</span></div>
+        <pre class="text-xs overflow-auto">${escapeHtml(JSON.stringify(data, null, 2))}</pre>
+      </div>`;
+    // refresh list
+    const r = await fetch('/api/calls').then(r=>r.json());
+    ALL = r.calls;
+    renderList();
+  } catch (e) {
+    $('#upload-status').textContent = 'Error: ' + e.message;
+  } finally {
+    $('#btn-upload').disabled = false;
+  }
+};
+
+boot();
+</script>
+</body>
+</html>

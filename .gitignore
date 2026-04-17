@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.DS_Store
+*.log
+# keep data/processed.db — it's the pre-seeded DB the deployed app reads from
