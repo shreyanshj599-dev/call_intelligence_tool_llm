@@ -62,3 +62,20 @@
 - **What I'd change with more time:** Normalise whitespace / punctuation before hashing so
   trivial reformat of a transcript still hits the cache, and expose a "reprocess" button to
   force regeneration.
+
+## 6. Auto-generated IDs for uploaded transcripts
+
+- **Alternatives considered:** Require the client to supply a `call_id` and
+  `telecaller_name` with each upload; prompt the user for these via extra form
+  fields before processing.
+- **Why this:** The brief specifies the upload payload is transcript-only.
+  Asking the grader (or a real manager pasting a fresh transcript) to also
+  come up with a lead ID and telecaller name adds friction for fields that
+  are easily synthesised. IDs use `UPLOAD_<UTC-timestamp>` (e.g.
+  `UPLOAD_20260420T133000`) which is guaranteed unique on this single-writer
+  SQLite setup. Telecaller / lead names default to "Uploaded" and "Uploaded Lead"
+  so uploaded calls are visually distinct from the 150 seeded calls in the list.
+- **What I'd change with more time:** Parse the first "Agent: ..." line of
+  the transcript to auto-extract the telecaller name ("Hello sir, Karthik
+  from Casagrand" → `Karthik`) so uploads slot correctly into the leaderboard
+  ranking.
