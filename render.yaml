@@ -6,11 +6,11 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
     envVars:
-      # Primary provider: Groq (llama-3.3-70b-versatile)
+      # Primary provider: Groq (llama-3.1-8b-instant)
       - key: GROQ_API_KEY
         sync: false        # set this manually in the Render dashboard
       - key: GROQ_MODEL
-        value: llama-3.3-70b-versatile
+        value: llama-3.1-8b-instant
       # Optional fallback provider: Gemini (auto-used if GROQ_API_KEY not set)
       - key: GEMINI_API_KEY
         sync: false        # optional; set in dashboard only if using Gemini fallback

@@ -28,7 +28,7 @@ export GROQ_API_KEY=your_key_here
 uvicorn main:app --app-dir backend --reload
 ```
 
-> **Note:** The pipeline supports Groq as the primary provider (llama-3.3-70b-versatile) with
+> **Note:** The pipeline supports Groq as the primary provider (llama-3.1-8b-instant) with
 > Gemini as an automatic fallback. Set `GEMINI_API_KEY` instead if you prefer Gemini.
 
 ## Pre-seeded data
@@ -48,7 +48,7 @@ python backend/seed.py --limit 5  # smoke test
 
 | Path | What it does |
 |------|--------------|
-| `backend/pipeline.py` | Single-shot Groq (llama-3.3-70b) call → validated extraction + scoring JSON (Gemini fallback) |
+| `backend/pipeline.py` | Single-shot Groq (llama-3.1-8b-instant) call → validated extraction + scoring JSON (Gemini fallback) |
 | `backend/rubric.py` | 0–5 anchors for each of the 4 scoring dimensions |
 | `backend/main.py` | FastAPI app: REST API + serves the static frontend |
 | `backend/db.py` | SQLite storage, idempotency by transcript hash |

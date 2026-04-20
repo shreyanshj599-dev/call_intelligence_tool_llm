@@ -1,7 +1,7 @@
 """
 Call Intelligence pipeline: single LLM call per transcript returning all fields.
 
-Primary provider: Groq (llama-3.3-70b-versatile) — OpenAI-compatible API, fast + free tier.
+Primary provider: Groq (llama-3.1-8b-instant) — OpenAI-compatible API, fast + free tier.
 Fallback provider: Gemini (Google AI Studio) — auto-selected if GROQ_API_KEY is not set.
 
 Provider selection is automatic based on env vars:
@@ -36,7 +36,7 @@ if not PROVIDER:
 if PROVIDER == "groq":
     from openai import OpenAI
 
-    MODEL_NAME = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+    MODEL_NAME = os.environ.get("GROQ_MODEL", "llama-3.1-8b-instant")
     API_KEY = os.environ.get("GROQ_API_KEY", "")
     _groq_client = OpenAI(api_key=API_KEY, base_url="https://api.groq.com/openai/v1") if API_KEY else None
 else:

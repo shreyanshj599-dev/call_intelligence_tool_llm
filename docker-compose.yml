@@ -4,9 +4,9 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # Primary provider: Groq (llama-3.3-70b-versatile)
+      # Primary provider: Groq (llama-3.1-8b-instant)
       - GROQ_API_KEY=${GROQ_API_KEY}
-      - GROQ_MODEL=llama-3.3-70b-versatile
+      - GROQ_MODEL=llama-3.1-8b-instant
       # Optional fallback: Gemini (auto-used if GROQ_API_KEY is empty)
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GEMINI_MODEL=gemini-2.0-flash

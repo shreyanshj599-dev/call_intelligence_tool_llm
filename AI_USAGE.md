@@ -3,21 +3,23 @@
 ## LLM in the pipeline
 
 - **Provider:** Groq (OpenAI-compatible API)
-- **Model:** `llama-3.3-70b-versatile`
+- **Model:** `llama-3.1-8b-instant`
 - **Mode:** structured JSON output (`response_format: {"type": "json_object"}`,
   `temperature: 0.1`)
 - **Call count across the 150 transcripts:** 150 (one call per transcript,
   no retries on the successful run). Upload flow adds one call per uploaded
   transcript — cached by transcript hash so repeats cost zero.
 - **Estimated cost:** $0 — inside Groq's free tier. Seeding all 150 transcripts
-  took ~6 minutes with pacing between calls.
+  took ~3 minutes with pacing between calls.
 - **Why this model:** Initially targeted Gemini 2.0-flash, but hit free-tier
   quota issues (limit: 0 on my account) during seeding. Switched to Groq
-  llama-3.3-70b-versatile because (a) generous free quota (500K tokens/day),
-  (b) fast enough that upload feels interactive (p95 under ~2s), (c) strong
-  JSON-mode adherence and reasonable Tamil-English interpretation, (d) the
-  pipeline auto-detects provider via env vars so swapping is a single
-  environment-variable change.
+  `llama-3.1-8b-instant` because (a) the most generous free quota on Groq
+  (500K tokens/day) meant I could re-seed the full dataset without quota
+  anxiety, (b) sub-second latency (~300ms per call) makes the live upload flow
+  feel instant, (c) JSON-mode adherence is strong and the structured extraction
+  task doesn't require the larger 70b model's reasoning depth, (d) the
+  pipeline auto-detects provider via env vars so swapping to `llama-3.3-70b-versatile`
+  or Gemini is a single environment-variable change.
 
 ## AI coding tool usage
 
@@ -39,10 +41,11 @@
      Collapsed to a single `analysis_json` blob because the shape is query-light
      and column sprawl was making migrations for rubric tweaks painful.
   4. After hitting Gemini free-tier quota limits mid-seeding, restructured
-     `pipeline.py` with **Groq as the primary provider** (llama-3.3-70b-versatile)
+     `pipeline.py` with **Groq as the primary provider** (`llama-3.1-8b-instant`)
      and **Gemini retained as an automatic fallback**. Provider selection is
      env-var-driven (`GROQ_API_KEY` presence → use Groq; else fall back to
      Gemini) so the same code runs on either backend with zero code changes.
+     Swapping to `llama-3.3-70b-versatile` is a one-line env-var change.
 
 ## Honesty note
 
