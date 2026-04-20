@@ -83,6 +83,7 @@ def get_rubric():
 @app.get("/api/admin/telemetry")
 def telemetry():
     s = pipeline.STATS
+    provider_label = "Groq" if pipeline.PROVIDER == "groq" else "Gemini"
     return {
         "llm_calls": s.calls,
         "errors": s.errors,
@@ -90,9 +91,10 @@ def telemetry():
         "p95_ms": round(s.p(0.95), 0),
         "avg_ms": round(s.total_latency_ms / s.calls, 0) if s.calls else 0,
         "total_calls_in_db": db.total_calls(),
+        "provider": pipeline.PROVIDER,
         "model": pipeline.MODEL_NAME,
-        "estimated_cost_usd": 0.0,  # Gemini 2.0 Flash free tier
-        "notes": "Running on Gemini free tier. Per-transcript cost ~$0 under free quota.",
+        "estimated_cost_usd": 0.0,  # Free tier on both providers
+        "notes": f"Running on {provider_label} free tier. Per-transcript cost ~$0 under free quota.",
     }
 
 
