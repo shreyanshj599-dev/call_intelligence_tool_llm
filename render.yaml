@@ -6,7 +6,13 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
     envVars:
-      - key: GEMINI_API_KEY
+      # Primary provider: Groq (llama-3.3-70b-versatile)
+      - key: GROQ_API_KEY
         sync: false        # set this manually in the Render dashboard
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      # Optional fallback provider: Gemini (auto-used if GROQ_API_KEY not set)
+      - key: GEMINI_API_KEY
+        sync: false        # optional; set in dashboard only if using Gemini fallback
       - key: GEMINI_MODEL
         value: gemini-2.0-flash
