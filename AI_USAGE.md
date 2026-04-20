@@ -38,9 +38,11 @@
   3. First draft stored each extraction field in its own SQLite column.
      Collapsed to a single `analysis_json` blob because the shape is query-light
      and column sprawl was making migrations for rubric tweaks painful.
-  4. Added Groq fallback in `pipeline.py` after hitting Gemini quota limits
-     mid-seeding. Provider selection is env-var-driven so the same code runs
-     on either backend.
+  4. After hitting Gemini free-tier quota limits mid-seeding, restructured
+     `pipeline.py` with **Groq as the primary provider** (llama-3.3-70b-versatile)
+     and **Gemini retained as an automatic fallback**. Provider selection is
+     env-var-driven (`GROQ_API_KEY` presence → use Groq; else fall back to
+     Gemini) so the same code runs on either backend with zero code changes.
 
 ## Honesty note
 

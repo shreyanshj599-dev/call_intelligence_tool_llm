@@ -6,7 +6,7 @@ Usage:
     python backend/seed.py --force        # reprocess everything
     python backend/seed.py --limit 10     # smoke test on first 10
 
-Respects Gemini free-tier rate limits with a tiny sleep between calls.
+Respects Groq (primary) / Gemini (fallback) free-tier rate limits with a tiny sleep between calls.
 """
 
 from __future__ import annotations

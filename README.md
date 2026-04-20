@@ -10,9 +10,9 @@ Built for the **Zetta Technologies** Full-Stack Engineering Intern take-home.
 ## Quick start (local, one command)
 
 ```bash
-# 1. Get a free Gemini API key at https://aistudio.google.com/apikey
+# 1. Get a free Groq API key at https://console.groq.com/keys
 # 2. Put it in a .env file next to this README:
-echo "GEMINI_API_KEY=your_key_here" > .env
+echo "GROQ_API_KEY=your_key_here" > .env
 
 # 3. Run with docker compose
 docker compose up --build
@@ -24,9 +24,12 @@ If you prefer not to use Docker:
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-export GEMINI_API_KEY=your_key_here
+export GROQ_API_KEY=your_key_here
 uvicorn main:app --app-dir backend --reload
 ```
+
+> **Note:** The pipeline supports Groq as the primary provider (llama-3.3-70b-versatile) with
+> Gemini as an automatic fallback. Set `GEMINI_API_KEY` instead if you prefer Gemini.
 
 ## Pre-seeded data
 
@@ -45,7 +48,7 @@ python backend/seed.py --limit 5  # smoke test
 
 | Path | What it does |
 |------|--------------|
-| `backend/pipeline.py` | Single-shot Gemini call → validated extraction + scoring JSON |
+| `backend/pipeline.py` | Single-shot Groq (llama-3.3-70b) call → validated extraction + scoring JSON (Gemini fallback) |
 | `backend/rubric.py` | 0–5 anchors for each of the 4 scoring dimensions |
 | `backend/main.py` | FastAPI app: REST API + serves the static frontend |
 | `backend/db.py` | SQLite storage, idempotency by transcript hash |
@@ -87,7 +90,7 @@ python backend/seed.py --limit 5  # smoke test
 
 1. Push this repo to GitHub (private).
 2. New → Web Service → point at the repo; Render auto-detects `render.yaml`.
-3. In the service's Environment tab, set `GEMINI_API_KEY`.
+3. In the service's Environment tab, set `GROQ_API_KEY` (and optionally `GROQ_MODEL`).
 4. Deploy. First build installs deps; the pre-seeded DB is baked into the image.
 
 See `DECISIONS.md` and `AI_USAGE.md` for design notes.

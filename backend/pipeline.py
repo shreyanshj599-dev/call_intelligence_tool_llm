@@ -1,9 +1,13 @@
 """
 Call Intelligence pipeline: single LLM call per transcript returning all fields.
 
-Supports two providers, auto-selected by env vars:
-  * Groq (preferred if GROQ_API_KEY is set) — OpenAI-compatible API, fast + free tier
-  * Gemini (fallback) — Google AI Studio
+Primary provider: Groq (llama-3.3-70b-versatile) — OpenAI-compatible API, fast + free tier.
+Fallback provider: Gemini (Google AI Studio) — auto-selected if GROQ_API_KEY is not set.
+
+Provider selection is automatic based on env vars:
+  * If GROQ_API_KEY is set → use Groq (production default)
+  * Else if GEMINI_API_KEY is set → use Gemini
+  * LLM_PROVIDER env var can force either choice explicitly
 
 Design decisions (documented in DECISIONS.md):
   * One LLM call per transcript returning structured JSON — cheaper in tokens
