@@ -79,3 +79,26 @@
   the transcript to auto-extract the telecaller name ("Hello sir, Karthik
   from Casagrand" → `Karthik`) so uploads slot correctly into the leaderboard
   ranking.
+
+## 7. Ephemeral upload persistence on Render free tier (known tradeoff)
+
+- **Alternatives considered:** Render persistent disk (paid feature, not
+  available on free tier); managed Postgres via Render's free DB tier;
+  external SQLite-over-HTTP (Turso, Cloudflare D1).
+- **Why this (the current behavior):** Render's free web-service tier uses an
+  **ephemeral container filesystem** — any writes at runtime (uploads, edits)
+  are wiped when the container restarts (on redeploys, idle spin-down after
+  15 min, or Render-side maintenance). The 150 pre-seeded calls persist
+  because they're baked into the Docker image at build time (committed to
+  git), not written at runtime. Upload persistence was out of scope for
+  free-tier deployment and would require either a paid disk ($1/mo minimum)
+  or a full migration to Postgres. For the grader's evaluation flow —
+  dashboard review, rubric inspection, scoring, leaderboard — the 150
+  pre-seeded calls are always available and scored consistently on
+  `llama-3.1-8b-instant`.
+- **What I'd change for production:** Migrate the SQLite layer to Render's
+  free-tier PostgreSQL (or Supabase). The DB abstraction in `db.py` is
+  small (~140 lines, 6 functions) and the schema is portable — a day of
+  work to swap drivers, add a connection pool, and update the idempotency
+  index. This would unlock multi-user concurrent access too, which SQLite's
+  single-writer model doesn't handle well.

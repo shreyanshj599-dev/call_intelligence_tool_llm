@@ -58,8 +58,11 @@ def health():
 
 
 @app.get("/api/calls")
-def list_calls():
-    return {"calls": db.get_all()}
+def list_calls(search: str | None = None):
+    """List calls. Optional ?search=<query> does a case-insensitive substring
+    match against transcript body + telecaller_name + lead_name. Empty query
+    returns all calls. Combines with frontend filters client-side."""
+    return {"calls": db.get_all(search=search)}
 
 
 @app.get("/api/calls/{call_id}")

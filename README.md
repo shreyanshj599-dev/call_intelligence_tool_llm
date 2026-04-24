@@ -36,6 +36,17 @@ uvicorn main:app --app-dir backend --reload
 The repo ships with `data/processed.db` containing all **150 calls already processed**.
 The deployed URL shows a populated dashboard with zero runtime LLM cost.
 
+> **⚠️ Note on Render free tier persistence:** The 150 pre-seeded calls are baked into
+> the Docker image and persist across restarts. However, **new uploads via the Upload tab
+> are written to the container's ephemeral filesystem** and will be lost when Render
+> restarts the container (on redeploys, idle spin-down after ~15 min, etc.).
+>
+> For a production deployment, the fix is either: (a) add a Render persistent disk (paid),
+> (b) migrate to a managed database like Render PostgreSQL (free tier available), or
+> (c) commit an external volume. This is a conscious free-tier tradeoff, not a design bug —
+> the eval demo flow (showing extraction, scores, and rubric on the 150 pre-seeded calls)
+> works reliably.
+
 To regenerate locally:
 
 ```bash

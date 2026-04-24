@@ -48,7 +48,7 @@
   <div class="flex flex-wrap gap-3 items-end mb-4">
     <div>
       <label class="text-xs text-slate-500">Search</label>
-      <input id="q" placeholder="lead name or telecaller" class="block border rounded px-3 py-1.5 w-64 text-sm" />
+      <input id="q" placeholder="transcript, lead, or telecaller" class="block border rounded px-3 py-1.5 w-64 text-sm" />
     </div>
     <div>
       <label class="text-xs text-slate-500">Telecaller</label>
@@ -80,6 +80,10 @@
     <div>
       <label class="text-xs text-slate-500">Min overall</label>
       <input id="f-min" type="number" min="0" max="5" step="0.1" value="0" class="block border rounded px-2 py-1.5 text-sm w-20" />
+    </div>
+    <div>
+      <label class="text-xs text-slate-500">Min discovery</label>
+      <input id="f-min-disc" type="number" min="0" max="5" step="1" value="0" class="block border rounded px-2 py-1.5 text-sm w-20" />
     </div>
     <div class="ml-auto text-sm text-slate-500" id="count">—</div>
   </div>
@@ -198,7 +202,20 @@ async function boot() {
   $('#f-tc').innerHTML = '<option value="">All</option>' + tcs.map(n=>`<option>${n}</option>`).join('');
   renderList();
   renderRubric();
-  ['q','f-tc','f-sv','f-act','f-min'].forEach(id => $('#'+id).addEventListener('input', renderList));
+  ['f-tc','f-sv','f-act','f-min','f-min-disc'].forEach(id => $('#'+id).addEventListener('input', renderList));
+  // Search hits the backend so we can match transcript bodies (not shipped to client).
+  // Debounced to avoid a fetch per keystroke.
+  let searchTimer = null;
+  $('#q').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(async () => {
+      const q = $('#q').value.trim();
+      const url = q ? `/api/calls?search=${encodeURIComponent(q)}` : '/api/calls';
+      const r = await fetch(url).then(r=>r.json());
+      ALL = r.calls;
+      renderList();
+    }, 250);
+  });
   document.querySelectorAll('[data-sort]').forEach(th => th.onclick = () => {
     const k = th.dataset.sort;
     if (k === sortKey) sortDir = -sortDir; else { sortKey = k; sortDir = -1; }
@@ -220,17 +237,19 @@ function setTab(tab) {
 }
 
 function filtered() {
-  const q = $('#q').value.toLowerCase().trim();
+  // Search (#q) is handled server-side so ALL is already narrowed to matches.
+  // The remaining filters operate on that narrowed set — combining cleanly.
   const tc = $('#f-tc').value;
   const sv = $('#f-sv').value;
   const act = $('#f-act').value;
   const min = parseFloat($('#f-min').value||0);
+  const minDisc = parseFloat($('#f-min-disc').value||0);
   return ALL.filter(c => {
-    if (q && !(c.lead_name?.toLowerCase().includes(q) || c.telecaller_name?.toLowerCase().includes(q))) return false;
     if (tc && c.telecaller_name !== tc) return false;
     if (sv && c.site_visit_outcome !== sv) return false;
     if (act && c.recommended_next_action !== act) return false;
     if ((c.overall_score||0) < min) return false;
+    if ((c.discovery_score||0) < minDisc) return false;
     return true;
   }).sort((a,b) => {
     const va=a[sortKey], vb=b[sortKey];

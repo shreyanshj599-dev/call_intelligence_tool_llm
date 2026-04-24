@@ -79,14 +79,29 @@ def get_by_hash(h: str):
         return dict(r) if r else None
 
 
-def get_all(limit: int = 500):
+def get_all(limit: int = 500, search: str | None = None):
+    """List calls, optionally filtered by a case-insensitive substring match
+    against transcript body + telecaller_name + lead_name. Empty/None search
+    returns all rows (up to limit)."""
     with conn() as c:
-        rows = c.execute(
-            "SELECT call_id, telecaller_id, telecaller_name, lead_id, lead_name, "
-            "duration_sec, timestamp, overall_score, analysis_json FROM calls "
-            "ORDER BY timestamp DESC LIMIT ?",
-            (limit,),
-        ).fetchall()
+        if search and search.strip():
+            like = f"%{search.strip().lower()}%"
+            rows = c.execute(
+                "SELECT call_id, telecaller_id, telecaller_name, lead_id, lead_name, "
+                "duration_sec, timestamp, overall_score, analysis_json FROM calls "
+                "WHERE LOWER(transcript) LIKE ? "
+                "   OR LOWER(telecaller_name) LIKE ? "
+                "   OR LOWER(lead_name) LIKE ? "
+                "ORDER BY timestamp DESC LIMIT ?",
+                (like, like, like, limit),
+            ).fetchall()
+        else:
+            rows = c.execute(
+                "SELECT call_id, telecaller_id, telecaller_name, lead_id, lead_name, "
+                "duration_sec, timestamp, overall_score, analysis_json FROM calls "
+                "ORDER BY timestamp DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
     out = []
     for r in rows:
         d = dict(r)
@@ -96,6 +111,12 @@ def get_all(limit: int = 500):
         d["recommended_next_action"] = a["recommended_next_action"]
         d["unit_configuration"] = a["extraction"]["unit_configuration"]
         d["timeline"] = a["extraction"]["timeline"]
+        # Per-dimension quality scores (enables per-dimension filtering on the frontend)
+        qs = a.get("quality_scores", {})
+        d["discovery_score"] = qs.get("discovery", {}).get("score", 0)
+        d["pitch_score"] = qs.get("pitch", {}).get("score", 0)
+        d["objection_handling_score"] = qs.get("objection_handling", {}).get("score", 0)
+        d["next_step_score"] = qs.get("next_step", {}).get("score", 0)
         out.append(d)
     return out
 
